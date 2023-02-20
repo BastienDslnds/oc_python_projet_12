@@ -1,3 +1,204 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 
-# Create your views here.
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+from datetime import datetime
+
+from .permissions import IsSalesContact, IsSupportContact
+
+from .serializers import (
+    ClientListSerializer,
+    ClientDetailSerializer,
+    ContractSerializer,
+    EventSerializer,
+)
+from .models import Client, Contract, Event
+
+
+class ClientViewset(ModelViewSet):
+
+    serializer_class = ClientListSerializer
+    detail_serializer_class = ClientDetailSerializer
+
+    permission_classes = [IsAuthenticated, IsSalesContact]
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return self.detail_serializer_class
+        return super().get_serializer_class()
+
+    def get_permissions(self):
+        if self.request.method in ['UPDATE']:
+            return [IsSalesContact()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Support'):
+            return Client.objects.filter(
+                events__support_contact=self.request.user.id
+            )
+        return Client.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        if user.has_perm('events.add_client'):
+            client = request.data
+            client["date_updated"] = datetime.now()
+            serializer = self.get_serializer(data=client)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+                headers=headers,
+            )
+        else:
+            return Response(
+                {'message': "You are not allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        if user.has_perm('events.change_client'):
+            data = request.data
+            data["date_updated"] = datetime.now()
+            client = get_object_or_404(Client, pk=self.kwargs['pk'])
+            self.check_object_permissions(request, client)
+            serializer = ClientListSerializer(client, data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {'message': "You are not allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class ContractViewset(ModelViewSet):
+
+    serializer_class = ContractSerializer
+
+    permission_classes = [IsAuthenticated, IsSalesContact]
+
+    def get_permissions(self):
+        if self.request.method in ['PUT']:
+            return [IsSalesContact()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Sales'):
+            return Contract.objects.filter(sales_contact=self.request.user)
+        return Contract.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        if user.has_perm('events.add_contract'):
+            contract = request.data
+            contract["sales_contact"] = self.request.user.id
+            contract["date_updated"] = datetime.now()
+            serializer = self.get_serializer(data=contract)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+                headers=headers,
+            )
+        else:
+            return Response(
+                {
+                    'message': "You are not allowed. Only members of sales team can create a contract. "
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        if user.has_perm('events.change_client'):
+            contract = get_object_or_404(Contract, pk=self.kwargs['pk'])
+            self.check_object_permissions(request, contract)
+            data = request.data
+            data["date_updated"] = datetime.now()
+            data["sales_contact"] = request.user.id
+            serializer = ContractSerializer(contract, data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {'message': "You are not allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class EventViewset(ModelViewSet):
+    serializer_class = EventSerializer
+
+    permission_classes = [IsAuthenticated, IsSalesContact, IsSupportContact]
+
+    def get_permissions(self):
+        if self.request.method in ['UPDATE']:
+            return [IsSalesContact() or IsSupportContact()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Sales'):
+            return Event.objects.filter(
+                client__sales_contact=self.request.user
+            )
+        return Event.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        if user.has_perm('events.add_client'):
+            event = request.data
+            event["date_updated"] = datetime.now()
+            serializer = self.get_serializer(data=event)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+                headers=headers,
+            )
+        else:
+            return Response(
+                {
+                    'message': "You are not allowed. Only members of sales team can create a contract."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        if user.has_perm('events.change_client'):
+            data = request.data
+            data["date_updated"] = datetime.now()
+            event = get_object_or_404(Event, pk=self.kwargs['pk'])
+            self.check_object_permissions(request, event)
+            serializer = EventSerializer(event, data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {'message': "You are not allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
