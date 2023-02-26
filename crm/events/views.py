@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from datetime import datetime
+from datetime import date
 
 from .permissions import IsSalesContact, IsSupportContact
 
@@ -31,7 +31,7 @@ class ClientViewset(ModelViewSet):
         return super().get_serializer_class()
 
     def get_permissions(self):
-        if self.request.method in ['UPDATE']:
+        if self.request.method in ['PUT']:
             return [IsSalesContact()]
         return [IsAuthenticated()]
 
@@ -46,15 +46,13 @@ class ClientViewset(ModelViewSet):
         user = request.user
         if user.has_perm('events.add_client'):
             client = request.data
-            client["date_updated"] = datetime.now()
+            client["date_updated"] = date.today()
             serializer = self.get_serializer(data=client)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED,
-                headers=headers,
             )
         else:
             return Response(
@@ -65,21 +63,23 @@ class ClientViewset(ModelViewSet):
     def update(self, request, *args, **kwargs):
         user = request.user
         if user.has_perm('events.change_client'):
-            data = request.data
-            data["date_updated"] = datetime.now()
             client = get_object_or_404(Client, pk=self.kwargs['pk'])
             self.check_object_permissions(request, client)
+            data = request.data.copy()
+            data["date_updated"] = date.today()
             serializer = ClientListSerializer(client, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(
                 serializer.data,
-                status=status.HTTP_201_CREATED,
+                status=status.HTTP_200_OK,
             )
         else:
             return Response(
-                {'message': "You are not allowed."},
-                status=status.HTTP_400_BAD_REQUEST,
+                {
+                    'message': "You are not allowed because you are not a sales member."
+                },
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
 
@@ -104,7 +104,7 @@ class ContractViewset(ModelViewSet):
         if user.has_perm('events.add_contract'):
             contract = request.data
             contract["sales_contact"] = self.request.user.id
-            contract["date_updated"] = datetime.now()
+            contract["date_updated"] = date.today()
             serializer = self.get_serializer(data=contract)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
@@ -128,14 +128,14 @@ class ContractViewset(ModelViewSet):
             contract = get_object_or_404(Contract, pk=self.kwargs['pk'])
             self.check_object_permissions(request, contract)
             data = request.data
-            data["date_updated"] = datetime.now()
+            data["date_updated"] = date.today()
             data["sales_contact"] = request.user.id
             serializer = ContractSerializer(contract, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(
                 serializer.data,
-                status=status.HTTP_201_CREATED,
+                status=status.HTTP_200_OK,
             )
         else:
             return Response(
@@ -150,8 +150,11 @@ class EventViewset(ModelViewSet):
     permission_classes = [IsAuthenticated, IsSalesContact, IsSupportContact]
 
     def get_permissions(self):
-        if self.request.method in ['UPDATE']:
-            return [IsSalesContact() or IsSupportContact()]
+        if self.request.method in ['PUT']:
+            if self.request.user.groups.filter(name='Support'):
+                return [IsSupportContact()]
+            elif self.request.user.groups.filter(name='Sales'):
+                return [IsSalesContact()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -163,9 +166,9 @@ class EventViewset(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         user = request.user
-        if user.has_perm('events.add_client'):
+        if user.has_perm('events.add_event'):
             event = request.data
-            event["date_updated"] = datetime.now()
+            event["date_updated"] = date.today()
             serializer = self.get_serializer(data=event)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
@@ -185,9 +188,9 @@ class EventViewset(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         user = request.user
-        if user.has_perm('events.change_client'):
-            data = request.data
-            data["date_updated"] = datetime.now()
+        if user.has_perm('events.change_event'):
+            data = request.data.copy()
+            data["date_updated"] = date.today()
             event = get_object_or_404(Event, pk=self.kwargs['pk'])
             self.check_object_permissions(request, event)
             serializer = EventSerializer(event, data=data)

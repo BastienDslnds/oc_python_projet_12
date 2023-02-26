@@ -9,8 +9,8 @@ class Client(models.Model):
     phone = models.CharField(max_length=20, blank=False)
     mobile = models.CharField(max_length=20, blank=False)
     company_name = models.CharField(max_length=250, blank=False)
-    date_created = models.DateTimeField(auto_now_add=True, blank=False)
-    date_updated = models.DateTimeField(blank=False)
+    date_created = models.DateField(auto_now_add=True, blank=False)
+    date_updated = models.DateField(auto_now_add=True, blank=False)
     sales_contact = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=False
     )
@@ -26,23 +26,23 @@ class Contract(models.Model):
         related_name='contracts',
         blank=False,
     )
-    date_created = models.DateTimeField(auto_now_add=True, blank=False)
-    date_updated = models.DateTimeField(blank=False)
+    date_created = models.DateField(auto_now_add=True, blank=False)
+    date_updated = models.DateField(auto_now_add=True, blank=False)
     signed_status = models.BooleanField(default=False)
     amount = models.FloatField(blank=False)
-    payment_due = models.DateTimeField(blank=False)
+    payment_due = models.DateField(blank=False)
 
 
 class Event(models.Model):
     client = models.ForeignKey(
         to=Client, on_delete=models.CASCADE, related_name='events', blank=False
     )
-    date_created = models.DateTimeField(auto_now_add=True, blank=False)
-    date_updated = models.DateTimeField(blank=False)
+    date_created = models.DateField(auto_now_add=True, blank=False)
+    date_updated = models.DateField(auto_now_add=True, blank=False)
     support_contact = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=False
     )
     event_status = models.IntegerField(blank=True, null=True)
     attendees = models.IntegerField(blank=False)
-    event_date = models.DateTimeField(blank=False)
+    event_date = models.DateField(blank=False)
     notes = models.CharField(max_length=400, blank=True)
