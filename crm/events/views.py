@@ -16,6 +16,7 @@ from .serializers import (
     EventSerializer,
 )
 from .models import Client, Contract, Event
+from .filters import ClientFilter
 
 
 class ClientViewset(ModelViewSet):
@@ -36,11 +37,23 @@ class ClientViewset(ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
+        queryset = Client.objects.all()
+        last_name = self.request.query_params.get('last_name')
+        email = self.request.query_params.get('email')
+        if last_name is not None:
+            if email is not None:
+                queryset = queryset.filter(last_name=last_name, email=email)
+            else:
+                queryset = queryset.filter(last_name=last_name)
+        else:
+            if email is not None:
+                queryset = queryset.filter(email=email)
         if self.request.user.groups.filter(name='Support'):
-            return Client.objects.filter(
+            queryset = queryset.filter(
                 events__support_contact=self.request.user.id
             )
-        return Client.objects.all()
+        else:
+            return queryset
 
     def create(self, request, *args, **kwargs):
         user = request.user

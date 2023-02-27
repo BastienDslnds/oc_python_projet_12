@@ -113,7 +113,7 @@ def test_get_client_as_sales_member(bdd_client, sales_member_one):
         'phone': '0222222222',
         'mobile': '0622222222',
         'company_name': 'company two',
-        'sales_contact': 1,
+        'sales_contact': sales_member_one.id,
         'date_created': date_created,
         'date_updated': date_updated,
         'events': [],
@@ -125,7 +125,9 @@ def test_get_client_as_sales_member(bdd_client, sales_member_one):
 
 
 @pytest.mark.django_db
-def test_get_client_as_support_member(bdd_event, support_member_one):
+def test_get_client_as_support_member(
+    bdd_event, sales_member_one, support_member_one
+):
     """A support member can get a client if he is
     the support contact of one of these events."""
 
@@ -150,7 +152,7 @@ def test_get_client_as_support_member(bdd_event, support_member_one):
         'phone': '0222222222',
         'mobile': '0622222222',
         'company_name': 'company two',
-        'sales_contact': 1,
+        'sales_contact': sales_member_one.id,
         'date_created': date_created,
         'date_updated': date_updated,
         'events': [1],
