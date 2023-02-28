@@ -50,7 +50,7 @@ class ClientViewset(ModelViewSet):
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.has_perm('events.add_client'):
-            client = request.data
+            client = request.data.copy()
             client['sales_contact'] = user.id
             client["date_updated"] = date.today()
             serializer = self.get_serializer(data=client)
@@ -118,7 +118,7 @@ class ContractViewset(ModelViewSet):
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.has_perm('events.add_contract'):
-            contract = request.data
+            contract = request.data.copy()
             contract["sales_contact"] = self.request.user.id
             contract["date_updated"] = date.today()
             serializer = self.get_serializer(data=contract)
@@ -191,7 +191,7 @@ class EventViewset(ModelViewSet):
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.has_perm('events.add_event'):
-            event = request.data
+            event = request.data.copy()
             event["date_updated"] = date.today()
             serializer = self.get_serializer(data=event)
             serializer.is_valid(raise_exception=True)

@@ -15,7 +15,6 @@ def client():
     return client
 
 
-@pytest.fixture
 def sales_member_one():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -28,6 +27,7 @@ def sales_member_one():
 
     # ajouter des permissions au groupe
     perm_add_client = Permission.objects.get(codename='add_client')
+    perm_view_client = Permission.objects.get(codename='view_client')
     perm_change_client = Permission.objects.get(codename='change_client')
     perm_add_contract = Permission.objects.get(codename='add_contract')
     perm_change_contract = Permission.objects.get(codename='change_contract')
@@ -35,6 +35,7 @@ def sales_member_one():
     perm_change_event = Permission.objects.get(codename='change_event')
     sales_group.permissions.add(
         perm_add_client,
+        perm_view_client,
         perm_change_client,
         perm_add_contract,
         perm_change_contract,
@@ -48,7 +49,6 @@ def sales_member_one():
     return sales_one
 
 
-@pytest.fixture
 def sales_member_two():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -81,7 +81,6 @@ def sales_member_two():
     return sales_two
 
 
-@pytest.fixture
 def support_member_one():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -110,7 +109,6 @@ def support_member_one():
     return support_one
 
 
-@pytest.fixture
 def support_member_two():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -137,8 +135,7 @@ def support_member_two():
     sales_group.user_set.add(support_two)
 
 
-@pytest.fixture
-def bdd_client(sales_member_one):
+def client_one(sales_member_one):
     client = Client.objects.create(
         sales_contact=sales_member_one,
         first_name='sam',
@@ -152,12 +149,11 @@ def bdd_client(sales_member_one):
     return client
 
 
-@pytest.fixture
-def bdd_contract(sales_member_one, bdd_client):
+def contract_one(client_one, sales_member_one):
 
     contract = Contract.objects.create(
         sales_contact=sales_member_one,
-        client=bdd_client,
+        client=client_one,
         signed_status=False,
         amount=100.0,
         payment_due="2023-02-28",
@@ -166,16 +162,14 @@ def bdd_contract(sales_member_one, bdd_client):
     return contract
 
 
-@pytest.fixture
 def bdd_event_status():
     event_status = EventStatus.objects.create(status=True)
     return event_status
 
 
-@pytest.fixture
-def bdd_event(bdd_client, support_member_one):
+def event_one(client_one, support_member_one):
     event = Event.objects.create(
-        client=bdd_client,
+        client=client_one,
         support_contact=support_member_one,
         attendees=100,
         event_date="2023-02-25",
@@ -185,10 +179,3 @@ def bdd_event(bdd_client, support_member_one):
     )
 
     return event
-
-
-@pytest.fixture
-def login_as_sales_member(client):
-    credentials = {"username": "sales1", "password": "vente1111"}
-    response_login = client.post('api/login/', credentials)
-    return response_login
