@@ -33,6 +33,15 @@ class Contract(models.Model):
     payment_due = models.DateField(blank=False)
 
 
+class EventStatus(models.Model):
+    status = models.BooleanField(default=False, unique=True)
+
+    @classmethod
+    def get_default_pk(cls):
+        event_status, created = cls.objects.get_or_create(status=False)
+        return event_status.pk
+
+
 class Event(models.Model):
     client = models.ForeignKey(
         to=Client, on_delete=models.CASCADE, related_name='events', blank=False
@@ -42,7 +51,11 @@ class Event(models.Model):
     support_contact = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=False
     )
-    event_status = models.IntegerField(blank=True, null=True)
+    event_status = models.ForeignKey(
+        to=EventStatus,
+        on_delete=models.CASCADE,
+        default=EventStatus.get_default_pk,
+    )
     attendees = models.IntegerField(blank=False)
     event_date = models.DateField(blank=False)
     notes = models.CharField(max_length=400, blank=True)

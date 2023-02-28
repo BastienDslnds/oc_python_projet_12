@@ -1,7 +1,7 @@
 import pytest
 
 from crm.users.models import User
-from crm.events.models import Client, Event, Contract
+from crm.events.models import Client, Event, Contract, EventStatus
 
 from django.contrib.auth.models import Group, Permission
 from django.test import Client as c
@@ -164,6 +164,12 @@ def bdd_contract(sales_member_one, bdd_client):
     )
 
     return contract
+
+
+@pytest.fixture
+def bdd_event_status():
+    event_status = EventStatus.objects.create(status=True)
+    return event_status
 
 
 @pytest.fixture

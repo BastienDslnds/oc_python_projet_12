@@ -107,9 +107,9 @@ class ContractViewset(ModelViewSet):
     def get_queryset(self):
         queryset = Contract.objects.all()
 
-        queryset = queryset.filter(
-            client__last_name=self.request.query_params.get('last_name')
-        ).filter(client__email=self.request.query_params.get('email'))
+        # queryset = queryset.filter(
+        #     client__last_name=self.request.query_params.get('last_name')
+        # ).filter(client__email=self.request.query_params.get('email'))
 
         if self.request.user.groups.filter(name='Sales'):
             queryset = queryset.filter(sales_contact=self.request.user)

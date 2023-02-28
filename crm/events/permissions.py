@@ -12,7 +12,6 @@ class IsSalesContact(BasePermission):
         return bool(request.user and request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
-        print("TEST")
         if isinstance(obj, Contract) or isinstance(obj, Client):
             if obj.sales_contact == request.user:
                 return True

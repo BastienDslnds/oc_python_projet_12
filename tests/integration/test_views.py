@@ -527,7 +527,9 @@ def test_not_modify_contract_as_support_member(
 
 
 @pytest.mark.django_db
-def test_create_event_as_sales_member(bdd_client, support_member_one):
+def test_create_event_as_sales_member(
+    bdd_client, support_member_one, bdd_event_status
+):
     """A sales member can create an event."""
 
     credentials = {"username": "sales1", "password": "vente1111"}
@@ -539,6 +541,7 @@ def test_create_event_as_sales_member(bdd_client, support_member_one):
         'support_contact': support_member_one.id,
         'attendees': 100,
         'event_date': '2023-02-28',
+        'event_status': 2,
         'notes': 'test',
     }
 
@@ -560,7 +563,7 @@ def test_create_event_as_sales_member(bdd_client, support_member_one):
         'date_updated': date_updated,
         'attendees': 100,
         'event_date': '2023-02-28',
-        'event_status': None,
+        'event_status': 2,
         'notes': 'test',
     }
 
@@ -624,7 +627,7 @@ def test_get_event_as_sales_member(bdd_event, bdd_client, support_member_one):
         'date_updated': date_updated,
         'attendees': 100,
         'event_date': '2023-02-25',
-        'event_status': None,
+        'event_status': 1,
         'notes': 'évènement de test',
     }
 
@@ -659,7 +662,7 @@ def test_get_event_as_support_member(
         'date_updated': date_updated,
         'attendees': 100,
         'event_date': '2023-02-25',
-        'event_status': None,
+        'event_status': 1,
         'notes': 'évènement de test',
     }
 
@@ -704,7 +707,7 @@ def test_modify_event_as_sales_member(
         'date_updated': date_updated,
         'attendees': 150,
         'event_date': '2023-02-28',
-        'event_status': None,
+        'event_status': 1,
         'notes': 'évènement de test modification',
     }
 
@@ -776,7 +779,7 @@ def test_modify_event_as_support_member(
         'date_updated': date_updated,
         'attendees': 150,
         'event_date': '2023-02-28',
-        'event_status': None,
+        'event_status': 1,
         'notes': 'évènement de test modification',
     }
 
