@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -26,6 +27,9 @@ class ClientViewset(ModelViewSet):
 
     permission_classes = [IsAuthenticated, IsSalesContact]
 
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['last_name', 'email']
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return self.detail_serializer_class
@@ -37,28 +41,17 @@ class ClientViewset(ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        queryset = Client.objects.all()
-        last_name = self.request.query_params.get('last_name')
-        email = self.request.query_params.get('email')
-        if last_name is not None:
-            if email is not None:
-                queryset = queryset.filter(last_name=last_name, email=email)
-            else:
-                queryset = queryset.filter(last_name=last_name)
-        else:
-            if email is not None:
-                queryset = queryset.filter(email=email)
         if self.request.user.groups.filter(name='Support'):
-            queryset = queryset.filter(
+            return Client.objects.filter(
                 events__support_contact=self.request.user.id
             )
-        else:
-            return queryset
+        return Client.objects.all()
 
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.has_perm('events.add_client'):
             client = request.data
+            client['sales_contact'] = user.id
             client["date_updated"] = date.today()
             serializer = self.get_serializer(data=client)
             serializer.is_valid(raise_exception=True)
@@ -79,6 +72,7 @@ class ClientViewset(ModelViewSet):
             client = get_object_or_404(Client, pk=self.kwargs['pk'])
             self.check_object_permissions(request, client)
             data = request.data.copy()
+            data['sales_contact'] = user.id
             data["date_updated"] = date.today()
             serializer = ClientListSerializer(client, data=data)
             serializer.is_valid(raise_exception=True)
@@ -102,15 +96,24 @@ class ContractViewset(ModelViewSet):
 
     permission_classes = [IsAuthenticated, IsSalesContact]
 
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['date_created', 'amount']
+
     def get_permissions(self):
         if self.request.method in ['PUT']:
             return [IsSalesContact()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
+        queryset = Contract.objects.all()
+
+        queryset = queryset.filter(
+            client__last_name=self.request.query_params.get('last_name')
+        ).filter(client__email=self.request.query_params.get('email'))
+
         if self.request.user.groups.filter(name='Sales'):
-            return Contract.objects.filter(sales_contact=self.request.user)
-        return Contract.objects.all()
+            queryset = queryset.filter(sales_contact=self.request.user)
+        return queryset
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -162,6 +165,9 @@ class EventViewset(ModelViewSet):
 
     permission_classes = [IsAuthenticated, IsSalesContact, IsSupportContact]
 
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['event_date']
+
     def get_permissions(self):
         if self.request.method in ['PUT']:
             if self.request.user.groups.filter(name='Support'):
@@ -171,11 +177,16 @@ class EventViewset(ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
+        queryset = Event.objects.all()
+
+        # queryset = queryset.filter(
+        #     client__last_name=self.request.query_params.get('last_name')
+        # ).filter(client__email=self.request.query_params.get('email'))
+
         if self.request.user.groups.filter(name='Sales'):
-            return Event.objects.filter(
-                client__sales_contact=self.request.user
-            )
-        return Event.objects.all()
+            queryset = queryset.filter(client__sales_contact=self.request.user)
+            return queryset
+        return queryset
 
     def create(self, request, *args, **kwargs):
         user = request.user

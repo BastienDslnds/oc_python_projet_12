@@ -25,7 +25,6 @@ def test_create_client_as_sales_member(sales_member_one):
         'phone': '0222222222',
         'mobile': '0622222222',
         'company_name': 'company two',
-        'sales_contact': sales_member_one.id,
     }
 
     response = client.post(
@@ -48,12 +47,11 @@ def test_create_client_as_sales_member(sales_member_one):
         'phone': '0222222222',
         'mobile': '0622222222',
         'company_name': 'company two',
-        'sales_contact': 1,
+        'sales_contact': sales_member_one.id,
         'date_created': date_created,
         'date_updated': date_updated,
     }
 
-    print(response.data)
     assert response.status_code == 201
     assert expected == response.data
 
@@ -75,7 +73,6 @@ def test_not_create_client_as_support_member(
         'phone': '0222222222',
         'mobile': '0622222222',
         'company_name': 'company two',
-        'sales_contact': sales_member_one.id,
     }
 
     response = client.post(
