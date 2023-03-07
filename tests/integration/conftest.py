@@ -6,8 +6,6 @@ from crm.events.models import Client, Event, Contract, EventStatus
 from django.contrib.auth.models import Group, Permission
 from django.test import Client as c
 
-from datetime import date
-
 
 @pytest.fixture
 def client():
@@ -15,6 +13,7 @@ def client():
     return client
 
 
+@pytest.fixture
 def sales_member_one():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -49,6 +48,7 @@ def sales_member_one():
     return sales_one
 
 
+@pytest.fixture
 def sales_member_two():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -81,6 +81,7 @@ def sales_member_two():
     return sales_two
 
 
+@pytest.fixture
 def support_member_one():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -109,6 +110,7 @@ def support_member_one():
     return support_one
 
 
+@pytest.fixture
 def support_member_two():
     """Créer un membre de l'équipe sales en BDD."""
     # créer un utilisateur
@@ -135,6 +137,7 @@ def support_member_two():
     sales_group.user_set.add(support_two)
 
 
+@pytest.fixture
 def client_one(sales_member_one):
     client = Client.objects.create(
         sales_contact=sales_member_one,
@@ -149,8 +152,8 @@ def client_one(sales_member_one):
     return client
 
 
+@pytest.fixture
 def contract_one(client_one, sales_member_one):
-
     contract = Contract.objects.create(
         sales_contact=sales_member_one,
         client=client_one,
@@ -162,11 +165,13 @@ def contract_one(client_one, sales_member_one):
     return contract
 
 
+@pytest.fixture
 def bdd_event_status():
     event_status = EventStatus.objects.create(status=True)
     return event_status
 
 
+@pytest.fixture
 def event_one(client_one, support_member_one):
     event = Event.objects.create(
         client=client_one,

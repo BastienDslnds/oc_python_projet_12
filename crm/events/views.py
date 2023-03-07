@@ -17,7 +17,7 @@ from .serializers import (
     EventSerializer,
 )
 from .models import Client, Contract, Event
-from .filters import ClientFilter
+from .filters import ContractFilter
 
 
 class ClientViewset(ModelViewSet):
@@ -28,6 +28,7 @@ class ClientViewset(ModelViewSet):
     permission_classes = [IsAuthenticated, IsSalesContact]
 
     filter_backends = [DjangoFilterBackend]
+    print(filter_backends.__getattribute__)
     filterset_fields = ['last_name', 'email']
 
     def get_serializer_class(self):
@@ -97,7 +98,7 @@ class ContractViewset(ModelViewSet):
     permission_classes = [IsAuthenticated, IsSalesContact]
 
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['date_created', 'amount']
+    filterset_class = ContractFilter
 
     def get_permissions(self):
         if self.request.method in ['PUT']:
@@ -106,10 +107,6 @@ class ContractViewset(ModelViewSet):
 
     def get_queryset(self):
         queryset = Contract.objects.all()
-
-        # queryset = queryset.filter(
-        #     client__last_name=self.request.query_params.get('last_name')
-        # ).filter(client__email=self.request.query_params.get('email'))
 
         if self.request.user.groups.filter(name='Sales'):
             queryset = queryset.filter(sales_contact=self.request.user)
@@ -143,7 +140,7 @@ class ContractViewset(ModelViewSet):
         if user.has_perm('events.change_client'):
             contract = get_object_or_404(Contract, pk=self.kwargs['pk'])
             self.check_object_permissions(request, contract)
-            data = request.data
+            data = request.data.copy()
             data["date_updated"] = date.today()
             data["sales_contact"] = request.user.id
             serializer = ContractSerializer(contract, data=data)
@@ -166,7 +163,11 @@ class EventViewset(ModelViewSet):
     permission_classes = [IsAuthenticated, IsSalesContact, IsSupportContact]
 
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['event_date']
+    filterset_fields = [
+        'event_date',
+        'client__email',
+        'client__last_name',
+    ]
 
     def get_permissions(self):
         if self.request.method in ['PUT']:
@@ -178,10 +179,6 @@ class EventViewset(ModelViewSet):
 
     def get_queryset(self):
         queryset = Event.objects.all()
-
-        # queryset = queryset.filter(
-        #     client__last_name=self.request.query_params.get('last_name')
-        # ).filter(client__email=self.request.query_params.get('email'))
 
         if self.request.user.groups.filter(name='Sales'):
             queryset = queryset.filter(client__sales_contact=self.request.user)

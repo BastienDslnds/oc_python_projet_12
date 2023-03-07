@@ -41,6 +41,9 @@ class EventStatus(models.Model):
         event_status, created = cls.objects.get_or_create(status=False)
         return event_status.pk
 
+    class Meta:
+        verbose_name_plural = 'Event status'
+
 
 class Event(models.Model):
     client = models.ForeignKey(
