@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import configparser
+
+config = configparser.ConfigParser()
+config.read('env.ini')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -85,34 +89,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": 'oc_p12_crm',
-        "USER": "postgres",
-        "PASSWORD": "oc_bastien_p12",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": config['DEFAULT']['DB_NAME'],
+        "USER": config['DEFAULT']['DB_USER'],
+        "PASSWORD": config['DEFAULT']['DB_PASSWORD'],
+        "HOST": config['DEFAULT']['DB_HOST'],
+        "PORT": config['DEFAULT']['DB_PORT'],
     }
 }
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "OPTIONS": {
-#             'service': 'my_service',
-#             'passfile': '.my_pgpass',
-#         },
-#     }
-# }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': env("DB_NAME"),
-#         'USER': env("DB_USER"),
-#         'PASSWORD': env("DB_PASSWORD"),
-#         'HOST': env("DB_HOST"),
-#         'PORT': env("DB_PORT"),
-#     }
-# }
 
 
 # Password validation
