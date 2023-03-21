@@ -95,7 +95,8 @@ class TestGetClient:
 
     @pytest.mark.django_db
     def test_get_client_as_sales_member(self, client_one, sales_member_one):
-        """A sales member can get any client."""
+        """A sales member can get a client if he is
+        the sales contact of this client."""
 
         token = self.login(username="sales1", password="vente1111")
 
@@ -125,6 +126,26 @@ class TestGetClient:
 
         assert response.status_code == 200
         assert response.data == expected
+
+    @pytest.mark.django_db
+    def test_not_get_client_as_sales_member(
+        self, client_one, sales_member_two
+    ):
+        """A sales member cannot get a client if he is not
+        the sales contact of this client."""
+
+        token = self.login(username="sales2", password="vente2222")
+
+        response = self.client.get(
+            reverse('client-detail', args=[client_one.id]),
+            HTTP_AUTHORIZATION=f'Bearer {token}',
+            format='json',
+        )
+
+        expected = ErrorDetail(string='Not found.', code='not_found')
+
+        assert response.data['detail'] == expected
+        ...
 
     @pytest.mark.django_db
     def test_get_client_as_support_member(

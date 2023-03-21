@@ -27,7 +27,6 @@ class ClientViewset(ModelViewSet):
     permission_classes = [IsAuthenticated, IsSalesContact]
 
     filter_backends = [DjangoFilterBackend]
-    print(filter_backends.__getattribute__)
     filterset_fields = ['last_name', 'email']
 
     def get_serializer_class(self):
@@ -45,6 +44,8 @@ class ClientViewset(ModelViewSet):
             return Client.objects.filter(
                 events__support_contact=self.request.user.id
             )
+        elif self.request.user.groups.filter(name='Sales'):
+            return Client.objects.filter(sales_contact=self.request.user.id)
         return Client.objects.all()
 
     def create(self, request, *args, **kwargs):
