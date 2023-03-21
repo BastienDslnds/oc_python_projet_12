@@ -521,7 +521,6 @@ class TestModifyContract:
             format='json',
         )
 
-        print(response.data)
         expected = ErrorDetail(
             string="You're not allowed because you're not the sales contact of the client.",
             code='permission_denied',
@@ -681,10 +680,30 @@ class TestGetEvent:
         assert response.data == expected
 
     @pytest.mark.django_db
+    def test_not_get_event_as_sales_member(
+        self, event_one, client_one, sales_member_two, support_member_one
+    ):
+        """A sales member cannot get an event if he is not
+        the sales contact of the associated client."""
+
+        token = self.login(username="sales2", password="vente2222")
+
+        response = self.client.get(
+            reverse('event-detail', args=[event_one.id]),
+            HTTP_AUTHORIZATION=f'Bearer {token}',
+            format='json',
+        )
+
+        expected = ErrorDetail(string='Not found.', code='not_found')
+
+        assert response.data['detail'] == expected
+
+    @pytest.mark.django_db
     def test_get_event_as_support_member(
         self, event_one, client_one, support_member_one
     ):
-        """A support member can get any event."""
+        """A support member can get an event if he is
+        the support contact of the associated event."""
 
         token = self.login(username="support1", password="help1111")
 
@@ -711,6 +730,25 @@ class TestGetEvent:
 
         assert response.status_code == 200
         assert response.data == expected
+
+    @pytest.mark.django_db
+    def test_not_get_event_as_support_member(
+        self, event_one, client_one, support_member_two
+    ):
+        """A support member cannot get an event if he is not
+        the support contact of this event."""
+
+        token = self.login(username="support2", password="help2222")
+
+        response = self.client.get(
+            reverse('event-detail', args=[event_one.id]),
+            HTTP_AUTHORIZATION=f'Bearer {token}',
+            format='json',
+        )
+
+        expected = ErrorDetail(string='Not found.', code='not_found')
+
+        assert response.data['detail'] == expected
 
 
 class TestModifyEvent:

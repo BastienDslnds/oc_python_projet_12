@@ -21,7 +21,6 @@ from .filters import ContractFilter
 
 
 class ClientViewset(ModelViewSet):
-
     serializer_class = ClientListSerializer
     detail_serializer_class = ClientDetailSerializer
 
@@ -92,7 +91,6 @@ class ClientViewset(ModelViewSet):
 
 
 class ContractViewset(ModelViewSet):
-
     serializer_class = ContractSerializer
 
     permission_classes = [IsAuthenticated, IsSalesContact]
@@ -182,6 +180,9 @@ class EventViewset(ModelViewSet):
 
         if self.request.user.groups.filter(name='Sales'):
             queryset = queryset.filter(client__sales_contact=self.request.user)
+            return queryset
+        elif self.request.user.groups.filter(name='Support'):
+            queryset = queryset.filter(support_contact=self.request.user)
             return queryset
         return queryset
 
