@@ -29,9 +29,6 @@ router.register('events', EventViewset, basename='event')
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path(
-        "api/login/", login, name='login'
-    ),  # Propre vue Login car besoin de générer un Token
-    # path("pai/logout/", logout, name='logout'), #TODO
+    path("api/login/", login, name='login'),
     path("api/", include(router.urls)),
 ]

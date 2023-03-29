@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+import logging
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -8,7 +9,7 @@ from rest_framework import status
 
 from datetime import date
 
-from .permissions import IsSalesContact, IsSupportContact
+from .permissions import IsSalesContact, IsSupportContact, HasActiveContract
 
 from .serializers import (
     ClientListSerializer,
@@ -18,6 +19,8 @@ from .serializers import (
 )
 from .models import Client, Contract, Event
 from .filters import ContractFilter
+
+logger = logging.getLogger(__name__)
 
 
 class ClientViewset(ModelViewSet):
@@ -41,6 +44,7 @@ class ClientViewset(ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.groups.filter(name='Support'):
+            logger.info("Get client(s)")
             return Client.objects.filter(
                 events__support_contact=self.request.user.id
             )
@@ -57,11 +61,13 @@ class ClientViewset(ModelViewSet):
             serializer = self.get_serializer(data=client)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
+            logger.info("Create a client")
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED,
             )
         else:
+            logger.warning("You don't have the permission to add a client.")
             return Response(
                 {'message': "You are not allowed."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -78,11 +84,13 @@ class ClientViewset(ModelViewSet):
             serializer = ClientListSerializer(client, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            logger.info("Update a client")
             return Response(
                 serializer.data,
                 status=status.HTTP_200_OK,
             )
         else:
+            logger.warning("You don't have the permission to update a client.")
             return Response(
                 {
                     'message': "You are not allowed because you are not a sales member."
@@ -159,7 +167,12 @@ class ContractViewset(ModelViewSet):
 class EventViewset(ModelViewSet):
     serializer_class = EventSerializer
 
-    permission_classes = [IsAuthenticated, IsSalesContact, IsSupportContact]
+    permission_classes = [
+        IsAuthenticated,
+        IsSalesContact,
+        IsSupportContact,
+        HasActiveContract,
+    ]
 
     filter_backends = [DjangoFilterBackend]
     filterset_fields = [
@@ -169,7 +182,9 @@ class EventViewset(ModelViewSet):
     ]
 
     def get_permissions(self):
-        if self.request.method in ['PUT']:
+        if self.request.method in ['POST']:
+            return [HasActiveContract()]
+        elif self.request.method in ['PUT']:
             if self.request.user.groups.filter(name='Support'):
                 return [IsSupportContact()]
             elif self.request.user.groups.filter(name='Sales'):
@@ -190,6 +205,10 @@ class EventViewset(ModelViewSet):
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.has_perm('events.add_event'):
+            client_id = request.data["client"]
+            client = get_object_or_404(Client, pk=client_id)
+            self.check_object_permissions(request, client)
+
             event = request.data.copy()
             event["date_updated"] = date.today()
             serializer = self.get_serializer(data=event)

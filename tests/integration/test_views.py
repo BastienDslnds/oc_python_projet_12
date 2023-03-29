@@ -116,7 +116,7 @@ class TestGetClient:
             'email': 'sam@test.com',
             'phone': '0222222222',
             'mobile': '0622222222',
-            'company_name': 'company two',
+            'company_name': 'company one',
             'sales_contact': sales_member_one.id,
             'date_created': date_created,
             'date_updated': date_updated,
@@ -172,7 +172,7 @@ class TestGetClient:
             'email': 'sam@test.com',
             'phone': '0222222222',
             'mobile': '0622222222',
-            'company_name': 'company two',
+            'company_name': 'company one',
             'sales_contact': sales_member_one.id,
             'date_created': date_created,
             'date_updated': date_updated,
@@ -428,7 +428,7 @@ class TestGetContract:
             'id': contract_one.id,
             'client': client_one.id,
             'sales_contact': sales_member_one.id,
-            'signed_status': False,
+            'signed_status': True,
             'amount': 100.0,
             'date_created': date_updated,
             'date_updated': date_created,
@@ -459,7 +459,7 @@ class TestGetContract:
             'id': contract_one.id,
             'client': client_one.id,
             'sales_contact': sales_member_one.id,
-            'signed_status': False,
+            'signed_status': True,
             'amount': 100.0,
             'date_created': date_updated,
             'date_updated': date_created,
@@ -587,7 +587,7 @@ class TestCreateEvent:
 
     @pytest.mark.django_db
     def test_create_event_as_sales_member(
-        self, client_one, sales_member_one, support_member_one
+        self, client_one, sales_member_one, support_member_one, contract_one
     ):
         """A sales member can create an event."""
 
@@ -629,7 +629,7 @@ class TestCreateEvent:
 
     @pytest.mark.django_db
     def test_not_create_event_as_support_member(
-        self, client_one, support_member_one
+        self, client_one, support_member_one, contract_one
     ):
         """A support member cannot create an event."""
 
@@ -654,6 +654,36 @@ class TestCreateEvent:
         assert (
             response.data['message']
             == "You are not allowed. Only members of sales team can create a contract."
+        )
+
+    @pytest.mark.django_db
+    def test_not_create_event_if_client_has_not_contract(
+        self, sales_member_one, client_two, support_member_one, contract_two
+    ):
+        """A sales member cannot create an event
+        if the client has not an active contract."""
+
+        token = self.login(username="sales1", password="vente1111")
+
+        event_data = {
+            'client': client_two.id,
+            'support_contact': support_member_one.id,
+            'attendees': 100,
+            'event_date': '2023-02-28',
+            'event_status': 1,
+            'notes': 'test',
+        }
+
+        response = self.client.post(
+            reverse('event-list'),
+            event_data,
+            HTTP_AUTHORIZATION=f'Bearer {token}',
+            format='json',
+        )
+
+        assert response.data['detail'] == ErrorDetail(
+            string="You're not allowed because the client doesn't have active contract.",
+            code='permission_denied',
         )
 
 

@@ -35,3 +35,23 @@ class IsSupportContact(BasePermission):
         if obj.support_contact == request.user:
             return True
         return False
+
+
+class HasActiveContract(BasePermission):
+    """Permission to ckeck if the client has
+    an active contract before creating an event."""
+
+    message = (
+        "You're not allowed because the client doesn't have active contract."
+    )
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj):
+        active_contract = Contract.objects.filter(
+            client=obj, signed_status=True
+        )
+        if active_contract:
+            return True
+        return False

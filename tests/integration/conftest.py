@@ -146,6 +146,21 @@ def client_one(sales_member_one):
         email='sam@test.com',
         phone='0222222222',
         mobile='0622222222',
+        company_name='company one',
+    )
+
+    return client
+
+
+@pytest.fixture
+def client_two(sales_member_one):
+    client = Client.objects.create(
+        sales_contact=sales_member_one,
+        first_name='pierre',
+        last_name='leparoux',
+        email='pierre@test.com',
+        phone='0233333333',
+        mobile='0633333333',
         company_name='company two',
     )
 
@@ -157,8 +172,21 @@ def contract_one(client_one, sales_member_one):
     contract = Contract.objects.create(
         sales_contact=sales_member_one,
         client=client_one,
-        signed_status=False,
+        signed_status=True,
         amount=100.0,
+        payment_due="2023-02-28",
+    )
+
+    return contract
+
+
+@pytest.fixture
+def contract_two(client_two, sales_member_one):
+    contract = Contract.objects.create(
+        sales_contact=sales_member_one,
+        client=client_two,
+        signed_status=False,
+        amount=50.0,
         payment_due="2023-02-28",
     )
 
