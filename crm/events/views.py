@@ -44,11 +44,12 @@ class ClientViewset(ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.groups.filter(name='Support'):
-            logger.info("Get client(s)")
+            logger.debug("GET client(s) by support user: OK")
             return Client.objects.filter(
                 events__support_contact=self.request.user.id
             )
         elif self.request.user.groups.filter(name='Sales'):
+            logger.debug("GET client(s) by sales user: OK")
             return Client.objects.filter(sales_contact=self.request.user.id)
         return Client.objects.all()
 
@@ -61,13 +62,15 @@ class ClientViewset(ModelViewSet):
             serializer = self.get_serializer(data=client)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
-            logger.info("Create a client")
+            logger.debug("POST client: OK")
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED,
             )
         else:
-            logger.warning("You don't have the permission to add a client.")
+            logger.debug(
+                "POST client: You don't have the permission to add a client."
+            )
             return Response(
                 {'message': "You are not allowed."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -84,13 +87,15 @@ class ClientViewset(ModelViewSet):
             serializer = ClientListSerializer(client, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            logger.info("Update a client")
+            logger.debug("PUT client: OK")
             return Response(
                 serializer.data,
                 status=status.HTTP_200_OK,
             )
         else:
-            logger.warning("You don't have the permission to update a client.")
+            logger.debug(
+                "PUT client: You don't have the permission to update a client."
+            )
             return Response(
                 {
                     'message': "You are not allowed because you are not a sales member."
@@ -129,12 +134,16 @@ class ContractViewset(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
+            logger.debug("POST contract: OK")
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED,
                 headers=headers,
             )
         else:
+            logger.debug(
+                "POST contract: You are not allowed. Only members of sales team can create a contract. "
+            )
             return Response(
                 {
                     'message': "You are not allowed. Only members of sales team can create a contract. "
@@ -153,11 +162,13 @@ class ContractViewset(ModelViewSet):
             serializer = ContractSerializer(contract, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            logger.debug("PUT contract: OK")
             return Response(
                 serializer.data,
                 status=status.HTTP_200_OK,
             )
         else:
+            logger.debug("PUT contract: You are not allowed.")
             return Response(
                 {'message': "You are not allowed."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -215,12 +226,16 @@ class EventViewset(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
+            logger.debug("POST event: OK")
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED,
                 headers=headers,
             )
         else:
+            logger.debug(
+                "POST event: You are not allowed. Only members of sales team can create a contract."
+            )
             return Response(
                 {
                     'message': "You are not allowed. Only members of sales team can create a contract."

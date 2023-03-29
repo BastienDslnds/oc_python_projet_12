@@ -163,7 +163,8 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'test.log',
+            'filename': 'general.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
@@ -172,5 +173,10 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s: %(message)s'
+        }
     },
 }
